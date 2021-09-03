@@ -1,0 +1,22 @@
+req.session.userId = user.userId
+{userId: 1} ==> Send that to the Redis
+
+1
+Redis is a Key Value pair store
+lwkejfrniuqj34w-098uo -> {userId: 1}
+
+2
+Express session will set the cookie on my browser foo=sdfajkfnpowhjfgophng 
+the above foo cookie is the signed version of that redis value[lwkejfrniuqj34w-098uo]
+
+3
+So when user makes a request 
+sdfajkfnpowhjfgophng --> will ve sent to the server
+
+4
+On the server it decrypt (Un-signes) it using the secret we used to create the cookie initially
+sdfajkfnpowhjfgophng --> lwkejfrniuqj34w-098uo
+
+5
+Now Server will make the request to redis with the decrypted value and get the data
+lwkejfrniuqj34w-098uo -> {userId: 1}

@@ -1,0 +1,8 @@
+1
+Every time we want to add a Mutation or Query we go the graphql folder paste our Mutation or Query 
+
+2
+Then we run generate command "yarn gen"
+
+3
+Now it will generate the custom hook inside generated folder and we can use it wherever we want.
