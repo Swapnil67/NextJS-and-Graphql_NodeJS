@@ -1,20 +1,14 @@
 import { User } from "../entities/User";
 import { MyContext } from "../types";
 import argon2 from "argon2";
-import { Arg, Ctx, Field, InputType, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
 import { EntityManager } from "@mikro-orm/postgresql";
 import {sign} from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
+import { UsernamePasswordInput } from "./UsernamePasswordInput";
+import { validateRegister } from "../utils/registerValidator";
 
 
-
-@InputType() 
-class UsernamePasswordInput {
-  @Field()
-  username: string
-  @Field()
-  password: string
-}
 
 @ObjectType()
 class FieldError {
@@ -37,13 +31,23 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
 
+
+  @Mutation(() => Boolean) 
+  async forgotPassword(
+    @Arg('email') email: string,
+    @Ctx() {em} : MyContext
+  ) {
+    // const user = await em.findOne(User, {email});
+    return true;
+  }
+
   @Query(() => User, {nullable: true})
   async me(
-    @Ctx() {cookie, req, em, userId}: MyContext
+    @Ctx() { req, res, em, userId}: MyContext
   ): Promise<User | null> {
-    console.log(req?.headers?.cookie);
+    console.log(req?.headers);
     let token = req?.headers?.cookie?.split('=')[1]
-    
+    console.log("Token from me: ", token);
     let user = null;
     if(token) {
       const { sub }: any = jwt.verify(token, "keep_it_secret");
@@ -60,22 +64,12 @@ export class UserResolver {
     @Arg('options') options: UsernamePasswordInput,
     @Ctx() {em}: MyContext
   ): Promise<UserResponse> {
-    if(options.username.length <= 2) {
-      return {
-        errors: [{
-          field: "username",
-          message: "Length must be greater than 2"
-        }]
-      }
+    
+    const errors = validateRegister(options)
+    if(errors) {
+      return { errors }
     }
-    if(options.password.length <= 2) {
-      return {
-        errors: [{
-          field: "password",
-          message: "Length must be greater than 2"
-        }]
-      }
-    }
+
     if(await em.findOne(User, {username: options.username})){
       return {
         errors: [{
@@ -93,6 +87,7 @@ export class UserResolver {
         .getKnexQuery()
         .insert({
           username: options.username,
+          email: options.email,
           password: hashedPassword,
           created_at: new Date(),
           updated_at: new Date()
@@ -102,7 +97,6 @@ export class UserResolver {
         
      user = result[0];
     } catch (err) {
-      console.log("Herer");
       console.log(err);
       return {
         errors: [{
@@ -118,21 +112,25 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg('options') options: UsernamePasswordInput,
+    @Arg('usernameOrEmail') usernameOrEmail: string,
+    @Arg('password') password: string,
     @Ctx() { em, req, res }: MyContext
   ): Promise<UserResponse> {
- console.log("What is this");
- 
-    const user = await em.findOne(User, {username: options.username});
+    let query = undefined;
+    if(usernameOrEmail.includes('@'))  query = {email: usernameOrEmail}
+    else  query = {username: usernameOrEmail}
+    
+    const user = await em.findOne(User, query);
+
     if(!user) {
       return {
         errors: [{
-          field: "username",
+          field: "usernameOrEmail",
           message: "That username doesn't exists"
         }]
       }
     }
-    const isValid = await argon2.verify(user.password, options.password.toLowerCase());
+    const isValid = await argon2.verify(user.password, password.toLowerCase());
     if(!isValid) {
       return {
         errors: [{
@@ -145,7 +143,7 @@ export class UserResolver {
     const token = sign({ sub: user.id }, "keep_it_secret")
     res.cookie('token', token, {
       httpOnly: true,
-      // secure: false,  // and won't be usable outside of my domain
+      secure: false,  // and won't be usable outside of my domain
       maxAge: 1000 * 60 * 60 * 24 //10 years
     })
     console.log(token);
@@ -172,7 +170,6 @@ export class UserResolver {
     @Ctx() {em}: MyContext
   ): Promise<User[]> {
     const users = await em.find(User, {});
-
     return users;
   }
 }

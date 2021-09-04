@@ -25,6 +25,6 @@
     "typeRoots": ["./node_modules/@types", "./types"],
     "baseUrl": "./"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "../client/src/graphql/createUrqlClient.ts"],
   "exclude": ["node_modules"],
 }

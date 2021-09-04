@@ -5,7 +5,5 @@ export type MyContext = {
   em: EntityManager<any> & EntityManager<IDatabaseDriver<Connection>>;
   req: Request;
   res: Response;
-  cookie?: string;
-  isMe?: any;
   userId?: number | null;
 } 

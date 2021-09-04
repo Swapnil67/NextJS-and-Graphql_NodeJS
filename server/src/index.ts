@@ -11,18 +11,14 @@ import { UserResolver } from "./resolvers/user";
 import cors from 'cors';
 import { MyContext } from "./types";
 import { getUserId } from "./utils/setTokens"
+import { User } from "./entities/User";
  
 
 const main = async () => {
   const orm = await MikroORM.init(microConfig);
+  // await orm.em.nativeDelete(User, {});
   await orm.getMigrator().up() // Running the migrator
   const app = express();
-  // CORS configuration
-  // const corsOptions = {
-  //   // origin: 'https://studio.apollographql.com',
-  //   origin: "http://localhost:3000",
-  //   credentials: true
-  // }
   app.use(cors({
     credentials: true,
     origin: ["http://localhost:3000", "https://studio.apollographql.com"]
@@ -35,7 +31,6 @@ const main = async () => {
       em: orm.em,
       req,
       res,
-      cookie: req?.cookies?.id,
       userId:
         req && req.headers.authorization
           ? getUserId(req)
@@ -46,7 +41,7 @@ const main = async () => {
   await apolloServer.start();
 
   // Creating graphql endpoint on express
-  apolloServer.applyMiddleware({ app,  path: "/graphql", cors: false })
+  apolloServer.applyMiddleware({ app,  path: "/", cors: false })
 
   app.listen(4000, () => {
     console.log("Server Running on Port: 4000🔥");

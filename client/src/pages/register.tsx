@@ -7,6 +7,8 @@ import InputField from '../components/inputFieldProp';
 import { useRegisterUserMutation } from '../generated/graphql';
 import { toErrorMap } from '../utils/toErrorMap';
 import { useRouter } from 'next/dist/client/router';
+import { withUrqlClient } from 'next-urql';
+import { createUrqlClient } from '../utils/createUrqlClient';
 
 interface registerProps {
 
@@ -20,22 +22,25 @@ const Register: React.FC<registerProps> = ({}) => {
   const router = useRouter();
   return (
     <Wrapper variant='small'>
-      <Formik initialValues={{username: "", password: ""}} 
+      <Formik initialValues={{email: "", username: "", password: ""}} 
       onSubmit={(async (values, {setErrors}) => {
         const opt = {registerOptions: {username: values.username, password: values.password}}
         console.log(opt);
-        const response = await register(opt);
+        const response = await register({registerOptions: values});
         console.log(response);
         if(response.data?.register.errors) {
           setErrors(toErrorMap(response.data.register.errors)); // Here we didn't used ? maek cuz its there in if statement
         }else if(response.data?.register.user) {
           // Worked
-          router.push('/');
+          router.push('/login');
         }
       })}>
         {({isSubmitting}) => (
           <Form>
-            <InputField name="username" placeholder="username" label="username" />
+            <InputField name="username" placeholder="Username" label="Username" />
+            <Box mt={4}>
+              <InputField name="email" placeholder="Email" label="Email" type="email"/>
+            </Box>
             <Box mt={4}>
               <InputField name="password" placeholder="password" label="password" type="password"/>
             </Box>
@@ -49,4 +54,4 @@ const Register: React.FC<registerProps> = ({}) => {
   )
 }
 
-export default Register;
+export default withUrqlClient(createUrqlClient)(Register);
