@@ -26,4 +26,8 @@ export class User {
   @Field(() => String)
   @Property({type: "date"})
   createdAt = new Date();
+
+  @Field(() => String)
+  @Property({type: "text", nullable: true})
+  forgotPassToken!: string;
 }

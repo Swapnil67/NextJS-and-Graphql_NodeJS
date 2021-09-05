@@ -1,12 +1,13 @@
 import { User } from "../entities/User";
 import { MyContext } from "../types";
 import argon2 from "argon2";
-import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import { Arg, Args, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
 import { EntityManager } from "@mikro-orm/postgresql";
 import {sign} from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
 import { validateRegister } from "../utils/registerValidator";
+import { sendEmail } from "../utils/sendEmail";
 
 
 
@@ -31,13 +32,59 @@ class UserResponse {
 @Resolver()
 export class UserResolver {
 
+  @Mutation(() => UserResponse)
+  async updatePassword(
+    @Arg('token') token: string,
+    @Arg('newPassword') newPassword: string,
+    @Ctx() {em} : MyContext
+  ): Promise<UserResponse> {
+    if(newPassword.length <= 2) {
+      return {
+        errors: [{
+          field: "newPassword",
+          message: "Length must be greater than 2"
+        }]
+      } 
+    } 
+
+    const decoded = jwt.verify(token,  "keep_it_secret")
+    const user = await em.findOne(User, {id: Number(decoded?.sub)})
+    console.log(jwt.verify(token,  "keep_it_secret"));
+    
+    if(!user || user?.forgotPassToken !== token) {
+      return {
+        errors: [{
+          field: "token",
+          message: "Token Expired"
+        }]
+      }
+    }
+    user.password = await argon2.hash(newPassword);
+    console.log(user);
+    user.forgotPassToken = "Your token is now Expired";
+    await em.persistAndFlush(user);
+    return {
+      user
+    };
+  }
 
   @Mutation(() => Boolean) 
   async forgotPassword(
     @Arg('email') email: string,
     @Ctx() {em} : MyContext
   ) {
-    // const user = await em.findOne(User, {email});
+    console.log("Sending Mail");
+    
+    const user = await em.findOne(User, {email});
+    if(!user) return true; // No User Exists with that Email
+    const tokenSetDate = new Date();
+    const tokenExpiresTimeStamp = tokenSetDate.setDate(tokenSetDate.getDate() + 3);
+    const tokenExpiresDate = new Date(tokenExpiresTimeStamp)
+    const token = sign({ sub: user.id, expires:  tokenExpiresDate}, "keep_it_secret")
+    user.forgotPassToken = token;
+    await em.persistAndFlush(user);
+    const changePass = `<a href="http://localhost:3000/change-password/${token}">Reset Password</a>`
+    await sendEmail(email, changePass);
     return true;
   }
 
@@ -119,9 +166,9 @@ export class UserResolver {
     let query = undefined;
     if(usernameOrEmail.includes('@'))  query = {email: usernameOrEmail}
     else  query = {username: usernameOrEmail}
+    console.log("Login Process", query);
     
     const user = await em.findOne(User, query);
-
     if(!user) {
       return {
         errors: [{
@@ -130,7 +177,7 @@ export class UserResolver {
         }]
       }
     }
-    const isValid = await argon2.verify(user.password, password.toLowerCase());
+    const isValid = await argon2.verify(user.password, password);
     if(!isValid) {
       return {
         errors: [{
