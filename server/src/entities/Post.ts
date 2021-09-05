@@ -1,3 +1,30 @@
+import { Field, Int, ObjectType } from "type-graphql";
+import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+
+
+@ObjectType() // Used to convert the class to graphql type
+@Entity()
+export class Post extends BaseEntity {
+  @Field(() => Int) // Exposing id to graphql schema
+  @PrimaryGeneratedColumn()
+  id!: number;
+  
+  @Field() // Exposing title to graphql schema
+  @Column({type: 'text'})
+  title!: string;
+  
+  @Field(() => String) // Exposing createdAt to graphql schema
+  @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt = Date;
+  
+  @Field(() => String) // Exposing updatedAt to graphql schema
+  @UpdateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt = Date;
+}
+
+// ---------------------------- Schema Using Mikro-ORM -----------------------------
+
+/*
 import { Entity, PrimaryKey, Property } from "@mikro-orm/core";
 import { Field, Int, ObjectType } from "type-graphql";
 
@@ -21,3 +48,4 @@ export class Post {
   @Property({type: "date", onUpdate: () => new Date()})
   updatedAt = new Date();
 }
+*/
