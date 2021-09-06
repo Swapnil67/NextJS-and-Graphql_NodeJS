@@ -16,10 +16,10 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({}) => {
-  // const [, register] = useMutation(REGISTER_MUT);
   const [, login] = useLoginUserMutation();  // created using Graphql Code Generator [yarn gen]
   
   const router = useRouter();
+  // console.log("From login: ", router);
   return (
     <Wrapper variant='small'>
       <Formik initialValues={{usernameOrEmail: "", password: ""}} 
@@ -32,7 +32,11 @@ const Login: React.FC<LoginProps> = ({}) => {
           setErrors(toErrorMap(response.data.login.errors)); // Here we didn't used ? maek cuz its there in if statement
         }else if(response.data?.login.user) {
           // Worked
-          router.push('/');
+          if(typeof router.query.next === "string") {
+            router.push(router.query.next)
+          }else {
+            router.push('/');
+          }
         }
       })}>
         {({isSubmitting}) => (

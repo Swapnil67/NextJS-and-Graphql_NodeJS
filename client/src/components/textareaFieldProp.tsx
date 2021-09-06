@@ -5,7 +5,7 @@ import { useField } from 'formik';
 
 
 // Now our input can take all psbl props that regular <input> tag takes
-type InputFieldProps = InputHTMLAttributes<HTMLInputElement> & {
+type TextareaFieldProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   name: string;
   label: string;
 };
@@ -13,15 +13,15 @@ type InputFieldProps = InputHTMLAttributes<HTMLInputElement> & {
 // '' => false
 // 'error message stuff' => true
 
-const InputField: React.FC<InputFieldProps> = ({label, size: _, ...props}) => {
+const TextAreaField: React.FC<TextareaFieldProps> = ({label, ...props}) => {
   const [field, {error}] = useField(props);  // Formik Hook
   return (
     <FormControl isInvalid={!!error}>
       <FormLabel htmlFor={field.name}>{label}</FormLabel>
-      <Input {...field} {...props} id={field.name} placeholder={props.placeholder} />
+      <Textarea {...field} {...props} id={field.name} placeholder={props.placeholder} />
       {error ? <FormErrorMessage>{error}</FormErrorMessage> : null }
     </FormControl>
   )
 }
 
-export default InputField;
+export default TextAreaField;

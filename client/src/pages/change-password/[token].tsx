@@ -12,17 +12,21 @@ import { useChangePasswordMutation } from '../../generated/graphql';
 import { createUrqlClient } from '../../utils/createUrqlClient';
 import { toErrorMap } from '../../utils/toErrorMap';
 
-const ChangePassword: NextPage<{token: string}> = ({token}) => {
+const ChangePassword: NextPage<{token: string}> = () => {
   const router = useRouter();
   const [, updatePassword] = useChangePasswordMutation()
   const [tokenError, setTokenError] = useState('');
   console.log('change password from token.tsx');
+  console.log("Token: ", router.query);
   
   return (
     <Wrapper variant='small'>
     <Formik initialValues={{ newPassword: "" }} 
     onSubmit={(async (values, {setErrors}) => {
-      const response = await updatePassword({token: token, newPassword: values.newPassword});
+      const response = await updatePassword({
+        token: typeof router.query.token === "string" ? router.query.token : '',
+        newPassword: values.newPassword
+      });
       console.log('Response: ', response);
       if(response.data?.updatePassword.errors) {
         const errorMap = toErrorMap(response.data.updatePassword.errors); // Here we didn't used ? make cuz its there in if statement
@@ -60,10 +64,11 @@ const ChangePassword: NextPage<{token: string}> = ({token}) => {
   );
 }
 
-ChangePassword.getInitialProps = ({query}) => {
-  return {
-    token: query.token as string
-  }
-}
+// No need Because we used Query Params
+// ChangePassword.getInitialProps = ({query}) => {
+//   return {
+//     token: query.token as string
+//   }
+// }
 
 export default withUrqlClient(createUrqlClient)(ChangePassword);

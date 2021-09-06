@@ -1,13 +1,24 @@
 import { Post } from "../entities/Post";
-import { Arg, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Field, InputType, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
 import { getConnection } from "typeorm";
+import { MyContext } from "src/types";
+import { isAuth } from "src/middlewares/isAuth";
+
+@InputType()
+class PostInput {
+  @Field()
+  title: string
+  @Field()
+  text: string
+}
+
 
 @Resolver()
 export class PostResolver {
 
   @Query(() => [Post]) // Graphql type
   async posts(): Promise<Post[]> {
-    const posts = await Post.find();
+    const posts = await Post.find({});
     // console.log(posts);
     return posts;
   }
@@ -22,15 +33,20 @@ export class PostResolver {
 
   @Mutation(() => Post) 
   async createPost(
-    @Arg("title") title: string,
+    @Arg("input") input: PostInput,
+    @Ctx(){req, userId}: MyContext
   ): Promise<Post> {
+    if(!userId) {
+      throw new Error("Not Authenticated");
+    }
     // const post = Post.create({title}).save();
     const result = await getConnection()
     .createQueryBuilder()
     .insert()
     .into(Post)
     .values({
-     title
+     ...input,
+     creatorId: userId
     })
     .returning('*')
     .execute();

@@ -2,7 +2,6 @@ import { User } from "../entities/User";
 import { MyContext } from "../types";
 import argon2 from "argon2";
 import { Arg, Args, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
-import { EntityManager } from "@mikro-orm/postgresql";
 import {sign} from 'jsonwebtoken';
 import * as jwt from 'jsonwebtoken';
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
@@ -97,9 +96,10 @@ export class UserResolver {
   async me(
     @Ctx() { req, res, userId}: MyContext
   ): Promise<User | undefined> {
-    console.log(req?.headers);
+    console.log("Req Headers form me: ", req?.headers);
+    
     let token = req?.headers?.cookie?.split('=')[1]
-    console.log("Token from me: ", token);
+    // console.log("Token from me: ", token);
     let user = undefined;
     if(token) {
       const { sub }: any = jwt.verify(token, "keep_it_secret");
@@ -197,6 +197,7 @@ export class UserResolver {
       secure: false,  // and won't be usable outside of my domain
       maxAge: 1000 * 60 * 60 * 24 //10 years
     })
+    res.setHeader('Authorization', `Bearer ${token}`)
     console.log(token);
     
     return {

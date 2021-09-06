@@ -1,5 +1,6 @@
 import { Field, Int, ObjectType } from "type-graphql";
-import { BaseEntity, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BaseEntity, Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { User } from "./User";
 
 
 @ObjectType() // Used to convert the class to graphql type
@@ -10,9 +11,24 @@ export class Post extends BaseEntity {
   id!: number;
   
   @Field() // Exposing title to graphql schema
-  @Column({type: 'text'})
+  @Column()
   title!: string;
+ 
+  @Field() // Exposing title to graphql schema
+  @Column()
+  text!: string;
+ 
+  @Field() // Exposing title to graphql schema
+  @Column({type: "int", default: 0})
+  points!: number;
+
+  @Field()
+  @Column()
+  creatorId: number;
   
+  @ManyToOne(() => User, (user) => user.posts)
+  creator: User
+
   @Field(() => String) // Exposing createdAt to graphql schema
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   createdAt = Date;

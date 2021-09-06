@@ -27,6 +27,8 @@ const main = async () => {
     entities: [Post, User]
   });
 
+  // await Post.delete({})
+
   const app = express();
   app.use(cors({
     credentials: true,
@@ -40,8 +42,8 @@ const main = async () => {
       req,
       res,
       userId:
-        req && req.headers.authorization
-          ? getUserId(req)
+        req && req.headers.cookie
+          ? getUserId(req,res)
           : null
     })
   });
